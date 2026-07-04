@@ -5,23 +5,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة الكاشير | RESPAWN</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Cairo', sans-serif; background: #0b0c10; color: white; }
-        .table-card { background: #1f2833; border-right: 4px solid #66fcf1; }
+        .table-card { background: #1f2833; border-right: 5px solid #66fcf1; }
     </style>
 </head>
 <body class="p-4">
-    <h2 class="text-2xl font-bold text-[#66fcf1] mb-6">💰 لوحة الحسابات (الكاشير)</h2>
+    <h2 class="text-3xl font-black text-[#66fcf1] mb-8 text-center">💰 مركز الحسابات</h2>
 
-    <div id="cashier-tables" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- الطاولات تظهر هنا بشكل حي: 
-             منضدة 11 | 4 كيمات + 2 مي | المجموع: 3000 د.ع | [زر إغلاق]
-        -->
+    <div id="cashier-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- الطاولات تظهر هنا لحظياً -->
     </div>
 
     <script type="module">
-        // ربط Firebase (Real-time Listener)
-        // وظيفة closeTable(): تحذف بيانات الطاولة من Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, getDocs, deleteDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { firebaseConfig, BOT_TOKEN, CHAT_ID } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // تحديث الطاولات لحظياً
+        onSnapshot(collection(db, "orders"), async (snap) => {
+            const tableTotals = {};
+            snap.forEach(doc => {
+                const data = doc.data();
+                if(data.status === 'confirmed') {
+                    const total = data.items.reduce((sum, i) => sum + i.price, 0);
+                    tableTotals[data.table] = (tableTotals[data.table] || 0) + total;
+                }
+            });
+
+            const grid = document.getElementById('cashier-grid');
+            grid.innerHTML = '';
+            
+            // قائمة بجميع الطاولات الممكنة
+            const allTables = ["7","8","9","10","PS1","PS2","PS3","PS4","PS5","PS6","11","12"];
+            allTables.forEach(t => {
+                const total = tableTotals[t] || 0;
+                grid.innerHTML += `
+                    <div class="table-card p-4 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <div class="font-bold">طاولة ${t}</div>
+                            <div class="text-xl text-[#66fcf1]">${total.toLocaleString()} د.ع</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="transferTable('${t}')" class="bg-blue-600 p-2 rounded-lg text-xs">نقل ⇄</button>
+                            <button onclick="closeTable('${t}')" class="bg-red-600 p-2 rounded-lg text-xs">إغلاق ❌</button>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+
+        window.closeTable = async (table) => {
+            if(!confirm(`هل تريد تصفير حساب طاولة ${table}؟`)) return;
+            const q = query(collection(db, "orders"), where("table", "==", table));
+            const snap = await getDocs(q);
+            snap.forEach(async (d) => await deleteDoc(doc(db, "orders", d.id)));
+            alert("تم إغلاق الطاولة وتصفير الحساب!");
+        }
+
+        window.transferTable = async (fromTable) => {
+            const toTable = prompt(`نقل حساب طاولة ${fromTable} إلى أي طاولة؟ (مثلاً: PS2)`);
+            if(!toTable) return;
+
+            const q = query(collection(db, "orders"), where("table", "==", fromTable));
+            const snap = await getDocs(q);
+            
+            const batch = writeBatch(db);
+            snap.forEach((d) => {
+                const data = d.data();
+                const ref = doc(db, "orders", d.id);
+                batch.update(ref, { table: toTable });
+            });
+            await batch.commit();
+
+            const msg = `🔄 *نقل حساب*\nمن طاولة: ${fromTable}\nإلى طاولة: ${toTable}`;
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown'})
+            });
+            alert("تم نقل الحساب بنجاح!");
+        }
     </script>
 </body>
 </html>
