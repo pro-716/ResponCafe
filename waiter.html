@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الويتر | RESPAWN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #0b0c10; color: white; }
+        .table-btn { background: #1f2833; border: 1px solid #66fcf1; }
+        .table-btn.active { background: #66fcf1; color: black; }
+    </style>
+</head>
+<body class="p-4 pb-32">
+    <h2 class="text-xl font-bold text-[#66fcf1] mb-4">👨‍🍳 لوحة الويتر</h2>
+
+    <!-- اختيار الطاولة -->
+    <div class="mb-6">
+        <p class="text-sm mb-2 text-gray-400">اختر الطاولة:</p>
+        <div class="flex flex-wrap gap-2" id="tables-grid">
+            <!-- الطاولات (7,8,9,10, PS1-6, 11,12) ستظهر هنا -->
+        </div>
+    </div>
+
+    <!-- قائمة المنتجات للإرسال -->
+    <div class="grid grid-cols-2 gap-2 mb-6" id="products-grid">
+        <!-- المنتجات تظهر هنا مع السعر -->
+    </div>
+
+    <!-- السلة والارسال -->
+    <div class="fixed bottom-0 left-0 right-0 bg-[#1f2833] p-4 rounded-t-3xl border-t-2 border-[#66fcf1]">
+        <div id="current-order" class="text-xs mb-2 max-h-20 overflow-y-auto"></div>
+        <input id="order-note" type="text" placeholder="ملاحظة..." class="w-full bg-black p-2 rounded mb-2 text-white text-sm">
+        <button onclick="sendOrder()" class="w-full bg-[#66fcf1] text-black font-bold py-3 rounded-xl">إرسال الطلب ⚡</button>
+    </div>
+
+    <!-- قسم الإدارة (تعديل الأسعار) -->
+    <div class="mt-10 p-4 bg-gray-900 rounded-xl border border-dashed border-gray-600">
+        <h3 class="text-sm font-bold mb-3 text-purple-400">⚙️ إدارة المنتجات والأسعار</h3>
+        <div class="flex gap-2 mb-2">
+            <input id="new-p-name" placeholder="اسم المنتج" class="bg-black p-2 text-xs rounded w-1/2">
+            <input id="new-p-price" type="number" placeholder="السعر" class="bg-black p-2 text-xs rounded w-1/4">
+            <button onclick="addNewProduct()" class="bg-purple-600 px-3 rounded text-xs">إضافة</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // ربط Firebase هنا (Firestore)
+        // وظيفة sendOrder(): ترسل لـ Firebase و Telegram
+        // وظيفة addNewProduct(): تضيف منتج لقاعدة البيانات
+    </script>
+</body>
+</html>
